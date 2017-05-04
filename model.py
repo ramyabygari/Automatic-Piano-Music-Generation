@@ -1,3 +1,4 @@
+#/Users/albertbou/Automatic-Piano-Music-Generation/Data
 
 from __future__ import print_function
 from keras.models import Sequential
@@ -13,6 +14,8 @@ from music21 import *
 from collections import defaultdict, OrderedDict
 from itertools import groupby, izip_longest
 import copy, random, pdb
+
+# pdb.set_trace() -> breakpoint
 
 
 ################################
@@ -38,6 +41,11 @@ file_names = file_names[0:numFiles]
 #    FUNCTIONS   #
 ##################
 
+#Plays song in real time -> requires pygame
+def playSong(MIDIdata): #input is class part or score
+    sp = midi.realtime.StreamPlayer(MIDIdata)
+    sp.play()
+
 #Obtain chords+notes merged in a single voice
 def extractOneVoice(MIDIdata,i):
 
@@ -45,7 +53,6 @@ def extractOneVoice(MIDIdata,i):
     mainInstrument = MIDIdata[i]  # select channel 0
     voices = mainInstrument.getElementsByClass(stream.Voice)
     num_voices = len(voices)
-
     # Sum up all voices
     melody = mainInstrument.getElementsByClass(stream.Voice)[0]
     for i in range(1, num_voices):
@@ -61,6 +68,7 @@ def parseMidi(filename):
     MIDIdata = converter.parse(
         path + "/" + filename)  # Parse the MIDI data for separate melody and accompaniment parts.
     # a Score class is obtained. Socre class is a Stream subclass for handling multi-part music.
+
     par = MIDIdata.parts  # Returns parts of the score. It filters out all other things that might be in a Score object, such as Metadata returning just the Parts.
     num_parts = len(par)
     melody = extractOneVoice(MIDIdata, 0)
@@ -81,8 +89,8 @@ def parseMidi(filename):
     measures = OrderedDict()
     measureNum = 0
     for part in melody:
-        curr_part = stream.Part()
-        print(part)
+        #curr_part = stream.Part()
+        curr_part = stream.Voice()
         curr_part.append(part.getContextByClass('Instrument'))
         curr_part.append(part.getContextByClass('MetronomeMark'))
         curr_part.append(part.getContextByClass('KeySignature'))
@@ -93,13 +101,38 @@ def parseMidi(filename):
     chords = OrderedDict()
     chordNum = 0
     for part in melody:
-        curr_part = stream.Part()
-        curr_part.append(part.getContextByClass('Chord'))
-        #curr_part.append(part.getContextByClass('Note'))
+        #curr_part = stream.Part()
+        curr_part = stream.Voice()
+        if part.getContextByClass('Chord') != None:
+            curr_part.insert(part.offset, part.getContextByClass('Chord'))
+        if part.getContextByClass('Note') != None:
+            #curr_part.insert(part.offset, part.getContextByClass('Note'))
+            curr_part.insertIntoNoteOrChord(part.offset, part.getContextByClass('Note'))
         chords[chordNum] = curr_part
         chordNum += 1
 
     return measures,chords
+
+#Creates a MIDI stream from chords/measures -> at the moment only chords used for reconstruction
+def generateMIDI(chords,measures):
+    lensong = len(chords)
+    song = stream.Voice()
+    for i in range(lensong):
+        # print(chords[i])
+        song.insertIntoNoteOrChord(chords[i].offset, chords[i], chordsOnly=False)
+
+    voices = song.getElementsByClass(stream.Voice)
+    num_voices = len(voices)
+    song2 = stream.Voice()
+    # Sum up all voices
+    for i in range(0, num_voices):
+        newVoice = song.getElementsByClass(stream.Voice)[i]
+        for j in newVoice:
+            try:
+                song2.insert(j.offset, j)
+            except exceptions21.StreamException:
+                print('warning: Note or Chord is already found in this Stream! solve that at some point!')
+    return song2
 
 ###################
 #    READ DATA    #
@@ -107,6 +140,7 @@ def parseMidi(filename):
 
 data = []
 for i in range (len(file_names)):
-    measures,chords = parseMidi(file_names[1])
 
-
+    measures,chords = parseMidi(file_names[0])
+    song = generateMIDI(chords,measures)
+    #playSong(song)
