@@ -16,7 +16,6 @@ import copy, random, pdb
 
 # pdb.set_trace() -> breakpoint
 
-
 ################################
 #    CHECK PATH WAS PROVIDED   #
 ################################
@@ -31,7 +30,7 @@ else:
 #    FILE LIST    #
 ###################
 
-numFiles = 3
+numFiles = 5
 file_names = os.listdir(path)#List of file names in the directory
 file_names = sorted(file_names, key=lambda item: (int(item.partition('.')[0]) if item[0].isdigit() else float('inf'), item))
 file_names = file_names[0:numFiles]
@@ -68,6 +67,8 @@ def parseMidi(filename):
         path + "/" + filename)  # Parse the MIDI data for separate melody and accompaniment parts.
     # a Score class is obtained. Socre class is a Stream subclass for handling multi-part music.
 
+    pdb.set_trace()
+
     par = MIDIdata.parts  # Returns parts of the score. It filters out all other things that might be in a Score object, such as Metadata returning just the Parts.
     num_parts = len(par)
     melody = extractOneVoice(MIDIdata, 0)
@@ -103,7 +104,6 @@ def parseMidi(filename):
         if part.getContextByClass('Chord') != None:
             curr_part.insert(part.offset, part.getContextByClass('Chord'))
         if part.getContextByClass('Note') != None:
-            #curr_part.insertIntoNoteOrChord(part.offset, part.getContextByClass('Note'))
             curr_part.insert(part.offset,part.getContextByClass('Note'))
         chords[chordNum] = curr_part
         chordNum += 1
@@ -117,7 +117,8 @@ def generateMIDI(chords,measures):
     for i in range(lensong):
         try:
             #song.insertIntoNoteOrChord(chords[i].offset, chords[i], chordsOnly=False)
-            song.insertIntoNoteOrChord(i, chords[i], chordsOnly=False)
+            chords[i].offset  = i
+            song.append(chords[i][0])
         except exceptions21.StreamException:
             print('warning: Note or Chord is already found in this Stream! solve that at some point!')
 
@@ -153,6 +154,7 @@ data = []
 merged_dict = OrderedDict()
 for i in range (len(file_names)):
     measures,chords = parseMidi(file_names[i])
+
     #song = generateMIDI(chords,measures)
     #playSong(song)
     values = []
@@ -233,14 +235,14 @@ for iteration in range(1, 10):
         print(seed)
         print(generated)
 
-        for i in range(40):#40 predicted chords
+        for i in range(20):# 40 predicted chords
             x = np.zeros((1, maxlen, len(vals)))
             for t, chord in enumerate(seed):
-                x[0, t, val_indices[chord]] = 1.#One-hot representation of the randomly selected sentence
+                x[0, t, val_indices[chord]] = 1.# One-hot representation of the randomly selected sentence
 
-            preds = model.predict(x, verbose=0)[0]#output is a prob vector of 59 positions
-            next_index = sample(preds, diversity)#sample an index from the probability array
-            next_chord = indices_val[next_index]#identifies the character
+            preds = model.predict(x, verbose=0)[0]# Output is a prob vector of 59 positions
+            next_index = sample(preds, diversity)# Sample an index from the probability array
+            next_chord = indices_val[next_index]# Identifies the character
 
             generated += next_chord
             seed.append(next_chord)
@@ -248,8 +250,12 @@ for iteration in range(1, 10):
 
             print(next_chord)
             sys.stdout.flush()
+
         print()
 
 ########################
 #    PLAY GENERATED    #
 ########################
+
+a = generateMIDI(chords,list())
+#playSong(a)
