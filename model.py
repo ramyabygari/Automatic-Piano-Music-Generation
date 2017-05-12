@@ -12,7 +12,6 @@ import sys
 import os
 from music21 import *
 from collections import defaultdict, OrderedDict
-from itertools import groupby, izip_longest
 import copy, random, pdb
 
 # pdb.set_trace() -> breakpoint
@@ -32,7 +31,7 @@ else:
 #    FILE LIST    #
 ###################
 
-numFiles = 15
+numFiles = 3
 file_names = os.listdir(path)#List of file names in the directory
 file_names = sorted(file_names, key=lambda item: (int(item.partition('.')[0]) if item[0].isdigit() else float('inf'), item))
 file_names = file_names[0:numFiles]
@@ -83,7 +82,7 @@ def parseMidi(filename):
             melody.insert(j.offset, j)
 
     melody.removeByClass(note.Rest)
-    #melody.removeByClass(note.Note)
+    melody.removeByClass(note.Note)
     #melody.removeByClass(chord.Chord)
 
     measures = OrderedDict()
@@ -116,7 +115,11 @@ def generateMIDI(chords,measures):
     lensong = len(chords)
     song = stream.Voice()
     for i in range(lensong):
-        song.insertIntoNoteOrChord(chords[i].offset, chords[i], chordsOnly=False)
+        try:
+            #song.insertIntoNoteOrChord(chords[i].offset, chords[i], chordsOnly=False)
+            song.insertIntoNoteOrChord(i, chords[i], chordsOnly=False)
+        except exceptions21.StreamException:
+            print('warning: Note or Chord is already found in this Stream! solve that at some point!')
 
     voices = song.getElementsByClass(stream.Voice)
     num_voices = len(voices)
@@ -131,7 +134,7 @@ def generateMIDI(chords,measures):
             except exceptions21.StreamException:
                 print('warning: Note or Chord is already found in this Stream! solve that at some point!')
         t += 1
-    return song2
+    return song
 
 # helper function to sample an index from a probability array -> allows to have variability
 def sample(preds, temperature=1.0):
@@ -246,3 +249,7 @@ for iteration in range(1, 10):
             print(next_chord)
             sys.stdout.flush()
         print()
+
+########################
+#    PLAY GENERATED    #
+########################
