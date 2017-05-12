@@ -30,7 +30,7 @@ else:
 #    FILE LIST    #
 ###################
 
-numFiles = 5
+numFiles = 20
 file_names = os.listdir(path)#List of file names in the directory
 file_names = sorted(file_names, key=lambda item: (int(item.partition('.')[0]) if item[0].isdigit() else float('inf'), item))
 file_names = file_names[0:numFiles]
@@ -66,8 +66,6 @@ def parseMidi(filename):
     MIDIdata = converter.parse(
         path + "/" + filename)  # Parse the MIDI data for separate melody and accompaniment parts.
     # a Score class is obtained. Socre class is a Stream subclass for handling multi-part music.
-
-    pdb.set_trace()
 
     par = MIDIdata.parts  # Returns parts of the score. It filters out all other things that might be in a Score object, such as Metadata returning just the Parts.
     num_parts = len(par)
