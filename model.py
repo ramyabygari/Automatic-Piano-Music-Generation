@@ -30,7 +30,7 @@ else:
 #    FILE LIST    #
 ###################
 
-numFiles = 20
+numFiles = 1
 file_names = os.listdir(path)#List of file names in the directory
 file_names = sorted(file_names, key=lambda item: (int(item.partition('.')[0]) if item[0].isdigit() else float('inf'), item))
 file_names = file_names[0:numFiles]
@@ -116,7 +116,7 @@ def generateMIDI(chords,measures):
         try:
             #song.insertIntoNoteOrChord(chords[i].offset, chords[i], chordsOnly=False)
             chords[i].offset  = i
-            song.append(chords[i][0])
+            song.append(chords[i])
         except exceptions21.StreamException:
             print('warning: Note or Chord is already found in this Stream! solve that at some point!')
 
@@ -228,12 +228,12 @@ for iteration in range(1, 10):
 
         generated = list()
         seed = data[start_index: start_index + maxlen]#frase inicial son los 40 caracteres despues de start_index
-        generated += seed
+        #generated += seed
         print('----- Generating with seed: "')
         print(seed)
-        print(generated)
+        #print(generated)
 
-        for i in range(20):# 40 predicted chords
+        for i in range(30):# 40 predicted chords
             x = np.zeros((1, maxlen, len(vals)))
             for t, chord in enumerate(seed):
                 x[0, t, val_indices[chord]] = 1.# One-hot representation of the randomly selected sentence
@@ -255,5 +255,5 @@ for iteration in range(1, 10):
 #    PLAY GENERATED    #
 ########################
 
-a = generateMIDI(chords,list())
+a = generateMIDI(generated,list())
 #playSong(a)
