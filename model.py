@@ -113,26 +113,12 @@ def generateMIDI(chords,measures):
     lensong = len(chords)
     song = stream.Voice()
     for i in range(lensong):
-        try:
-            #song.insertIntoNoteOrChord(chords[i].offset, chords[i], chordsOnly=False)
-            chords[i].offset  = i
-            song.append(chords[i])
-        except exceptions21.StreamException:
-            print('warning: Note or Chord is already found in this Stream! solve that at some point!')
-
-    voices = song.getElementsByClass(stream.Voice)
-    num_voices = len(voices)
-    song2 = stream.Voice()
-    # Sum up all voices
-    for i in range(0, num_voices):
-        newVoice = song.getElementsByClass(stream.Voice)[i]
-        t = 0
-        for j in newVoice:
-            try:
-                song2.insert(j.offset, j)
-            except exceptions21.StreamException:
-                print('warning: Note or Chord is already found in this Stream! solve that at some point!')
-        t += 1
+        notas = []
+        for j in vals[i]:
+            a = j.nameWithOctave
+            notas.append(note.Note(a))
+        nextchord = chord.Chord(notas)
+        song.insert(i,nextchord)
     return song
 
 # helper function to sample an index from a probability array -> allows to have variability
@@ -180,7 +166,7 @@ for i in range (len(file_names)):
 
 print('total chords:', len(data))
 vals = getUniqueChords(data)
-val_indices = dict((v, i) for i, v in enumerate(vals))
+val_indices = dict((v.fullName, i) for i, v in enumerate(vals))
 indices_val = dict((i, v) for i, v in enumerate(vals))
 
 ######################
@@ -203,9 +189,9 @@ X = np.zeros((len(pieces), maxlen, len(vals)), dtype=np.bool)
 y = np.zeros((len(pieces), len(vals)), dtype=np.bool)
 
 for i, piece in enumerate(pieces):
-    for t, chord in enumerate(piece):
-        X[i, t, val_indices[chord]] = 1
-    y[i, val_indices[next_chords[i]]] = 1
+    for t, acorde in enumerate(piece):
+        X[i, t, val_indices[acorde.fullName]] = 1
+    y[i, val_indices[next_chords[i].fullName]] = 1
 
 #####################################
 #    BUILD THE MODEL: SIMPLE LSTM   #
@@ -223,7 +209,7 @@ model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 #    TRAINING   #
 #################
 
-for iteration in range(1, 10):
+for iteration in range(1, 2):
     print()
     print('-' * 50)
     print('Iteration', iteration)
@@ -233,7 +219,7 @@ for iteration in range(1, 10):
 
     start_index = random.randint(0, len(data) - maxlen - 1)#valor random entre 0 y 200287-40-1
 
-    for diversity in [1.2]:#0.2, 0.5, 1.0, 1.2
+    for diversity in [0.2, 0.5, 1.0, 1.2]:#0.2, 0.5, 1.0, 1.2
         print()
         print('----- diversity:', diversity)
 
@@ -246,8 +232,8 @@ for iteration in range(1, 10):
 
         for i in range(30):# 40 predicted chords
             x = np.zeros((1, maxlen, len(vals)))
-            for t, chord in enumerate(seed):
-                x[0, t, val_indices[chord]] = 1.# One-hot representation of the randomly selected sentence
+            for t, acorde in enumerate(seed):
+                x[0, t, val_indices[acorde.fullName]] = 1.# One-hot representation of the randomly selected sentence
 
             preds = model.predict(x, verbose=0)[0]# Output is a prob vector of 59 positions
             next_index = sample(preds, diversity)# Sample an index from the probability array
@@ -267,4 +253,4 @@ for iteration in range(1, 10):
 ########################
 
 a = generateMIDI(generated,list())
-#playSong(a)
+playSong(a)
