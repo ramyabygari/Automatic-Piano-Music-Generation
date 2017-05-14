@@ -7,7 +7,9 @@ from keras.layers import LSTM
 from keras.layers import Dropout
 from keras.optimizers import RMSprop
 from keras.utils.data_utils import get_file
+from keras.callbacks import Callback
 import numpy as np
+import matplotlib.pyplot as plt
 import random
 import sys
 import os
@@ -31,7 +33,7 @@ else:
 #    FILE LIST    #
 ###################
 
-numFiles = 1
+numFiles = 3
 file_names = os.listdir(path)#List of file names in the directory
 file_names = sorted(file_names, key=lambda item: (int(item.partition('.')[0]) if item[0].isdigit() else float('inf'), item))
 file_names = file_names[0:numFiles]
@@ -206,22 +208,34 @@ model.add(LSTM(128))
 model.add(Dropout(0.2))
 model.add(Dense(len(vals)))
 model.add(Activation('softmax'))
-optimizer = RMSprop(lr=0.01)
+#optimizer = RMSprop(lr=0.01)
+optimizer = RMSprop()
 model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 
 #################
 #    TRAINING   #
 #################
 
-num_epochs = 15
 
+
+class LossHistory(Callback):
+    def on_train_begin(self, logs={}):
+        pass
+
+    def on_batch_end(self, batch, logs={}):
+        self.losses.append(logs.get('loss'))
+
+num_epochs = 15
+history = LossHistory()
+history.losses = []
 for epoch in range(1, num_epochs+1):
     print()
     print('-' * 50)
     print('epoxh', epoch)
     model.fit(X, y,
               batch_size=128,
-              epochs=1)
+              epochs=1,
+              callbacks=[history])
 
     start_index = random.randint(0, len(data) - maxlen - 1)#valor random entre 0 y 200287-40-1
 
@@ -233,7 +247,7 @@ for epoch in range(1, num_epochs+1):
         seed = data[start_index: start_index + maxlen]#frase inicial son los 40 caracteres despues de start_index
         #generated += seed
         print('----- Generating with seed: "')
-        print(seed)
+        #print(seed)
         #print(generated)
 
         for i in range(40):# 40 predicted chords
@@ -249,7 +263,7 @@ for epoch in range(1, num_epochs+1):
             seed.append(next_chord)
             del seed[0]
 
-            print(next_chord)
+            # print(next_chord)
             sys.stdout.flush()
 
         if (epoch % 5) == 0 or epoch == 1 or epoch == num_epochs:
@@ -259,6 +273,12 @@ for epoch in range(1, num_epochs+1):
 
         print()
 
+plt.plot(history.losses)
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.title('Loss function - 2 layers LSTM 128 net')
+# plt.show()
+plt.savefig('song_epochs_' + str(num_epochs) +'.png')
 ########################
 #    PLAY GENERATED    #
 ########################
