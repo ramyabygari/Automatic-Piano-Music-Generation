@@ -144,6 +144,17 @@ def sample(preds, temperature=1.0):
     probas = np.random.multinomial(1, preds, 1)
     return np.argmax(probas)
 
+# Return unique chords of the dataset
+def getUniqueChords(data):
+    chords = []
+    chordNames = []
+    for chord in data:
+        if not (chord.fullName in chordNames):
+            chords.append(chord)
+            chordNames.append(chord.fullName)
+
+    return chords
+
 ###################
 #    READ DATA    #
 ###################
@@ -168,7 +179,7 @@ for i in range (len(file_names)):
 ########################################
 
 print('total chords:', len(data))
-vals = list(set(data))
+vals = getUniqueChords(data)
 val_indices = dict((v, i) for i, v in enumerate(vals))
 indices_val = dict((i, v) for i, v in enumerate(vals))
 
