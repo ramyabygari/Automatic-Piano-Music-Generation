@@ -222,7 +222,7 @@ class LossHistory(Callback):
     def on_train_begin(self, logs={}):
         pass
 
-    def on_batch_end(self, batch, logs={}):
+    def on_epoch_end(self, batch, logs={}):
         self.losses.append(logs.get('loss'))
 
 num_epochs = 15
