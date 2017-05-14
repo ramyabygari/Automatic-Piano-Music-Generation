@@ -4,6 +4,7 @@ from __future__ import print_function
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 from keras.layers import LSTM
+from keras.layers import Dropout
 from keras.optimizers import RMSprop
 from keras.utils.data_utils import get_file
 import numpy as np
@@ -155,8 +156,8 @@ for i in range (len(file_names)):
     values = []
     for i in range(len(chords)):
         values.append(chords[i][0])
-        #if len(chords[i]) > 1:   -> If notes also added, more than 1 thing at the same time!!
-        #    values.append(chords[i][1])
+        #if len(chords[i]) > 1:#   -> If notes also added, more than 1 thing at the same time!!
+            #values.insertIntoNoteOrChord(chords[i][1].offset,chords[i][1], chordsOnly=True)
     data += values
     len(data)
 
@@ -193,13 +194,16 @@ for i, piece in enumerate(pieces):
         X[i, t, val_indices[acorde.fullName]] = 1
     y[i, val_indices[next_chords[i].fullName]] = 1
 
-#####################################
-#    BUILD THE MODEL: SIMPLE LSTM   #
-#####################################
+######################################
+#    BUILD THE MODEL: 2 LAYER-LSTM   #
+######################################
 
 print('Build model...')
 model = Sequential()
-model.add(LSTM(128, input_shape=(maxlen, len(vals))))
+model.add(LSTM(128, input_shape=(maxlen, len(vals)),return_sequences=True))
+model.add(Dropout(0.2))
+model.add(LSTM(128))
+model.add(Dropout(0.2))
 model.add(Dense(len(vals)))
 model.add(Activation('softmax'))
 optimizer = RMSprop(lr=0.01)
@@ -209,10 +213,12 @@ model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 #    TRAINING   #
 #################
 
-for iteration in range(1, 2):
+num_epochs = 15
+
+for epoch in range(1, num_epochs+1):
     print()
     print('-' * 50)
-    print('Iteration', iteration)
+    print('epoxh', epoch)
     model.fit(X, y,
               batch_size=128,
               epochs=1)
@@ -230,7 +236,7 @@ for iteration in range(1, 2):
         print(seed)
         #print(generated)
 
-        for i in range(30):# 40 predicted chords
+        for i in range(40):# 40 predicted chords
             x = np.zeros((1, maxlen, len(vals)))
             for t, acorde in enumerate(seed):
                 x[0, t, val_indices[acorde.fullName]] = 1.# One-hot representation of the randomly selected sentence
@@ -246,11 +252,15 @@ for iteration in range(1, 2):
             print(next_chord)
             sys.stdout.flush()
 
+        if (epoch % 5) == 0 or epoch == 1 or epoch == num_epochs:
+            generated = generateMIDI(generated, list())
+            name = 'song_epoch' + str(epoch) + '_diversity' + str(diversity) + '.mid'
+            fp = generated.write('midi', fp=name)
+
         print()
 
 ########################
 #    PLAY GENERATED    #
 ########################
 
-a = generateMIDI(generated,list())
-playSong(a)
+#playSong(a)
