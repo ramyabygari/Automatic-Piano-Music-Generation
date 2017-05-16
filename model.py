@@ -138,30 +138,15 @@ def getUniqueChords(data):
     chords = []
     info = []
     for chord in data:
-        if chord.isChord:
-            newinfo = generateKey(chord)
-            if not (newinfo in info):
-                info.append(newinfo)
-                chords.append(chord)
+        newinfo = generateKey(chord)
+        if not (newinfo in info):
+            info.append(newinfo)
+            chords.append(chord)
     return chords, info
 
-# Return unique notes of the dataset
-def getUniqueNotes(data):
-    notas = []
-    info = []
-    for nota in data:
-        if nota.isNote:
-            newinfo = generateKey(nota)
-            if not (newinfo in info):
-                info.append(newinfo)
-                notas.append(nota)
-    return notas, info
 
 def generateKey(object):
-    if object.isNote:
-        return str(object.nameWithOctave)+'_'+str(object.getContextByClass('KeySignature'))+'_'+str(object.getContextByClass('TimeSignature'))
-    elif object.isChord:
-        return str(object.fullName)+'_'+str(object.getContextByClass('KeySignature'))+'_'+str(object.getContextByClass('TimeSignature'))
+    return object[0].fullName + object[1].name + object[2].ratioString
 
 ###################
 #    READ DATA    #
@@ -189,20 +174,19 @@ for i in range (len(file_names)):
 #data[0][1].name
 #data[0][2].ratioString
 
-pdb.set_trace()
+
 
 ########################################
 #    ORGANIZE CHORDS IN THE DATASET    #
 ########################################
 
 print('total chords:', len(data))
-chordVals, infoChords = getUniqueChords(data)
-noteVals, infoNotes = getUniqueNotes(data)
-vals = chordVals + noteVals
-info = infoChords + infoNotes
+vals, info = getUniqueChords(data)
+
 
 val_indices = dict((inf, i) for i, inf in enumerate(info))
 indices_val = dict((i, v) for i, v in enumerate(vals))
+pdb.set_trace()
 
 ######################
 #    VECTORIZATION   #
