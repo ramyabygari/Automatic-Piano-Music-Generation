@@ -84,7 +84,7 @@ def parseMidi(filename):
             melody.insert(j.offset, j)
 
     melody.removeByClass(note.Rest)
-    melody.removeByClass(note.Note)
+    #melody.removeByClass(note.Note)
     #melody.removeByClass(chord.Chord)
 
     measures = OrderedDict()
@@ -117,7 +117,7 @@ def generateMIDI(chords,measures):
     song = stream.Voice()
     for i in range(lensong):
         notas = []
-        for j in vals[i]:
+        for j in chordVals[i]:
             a = j.nameWithOctave
             notas.append(note.Note(a))
         nextchord = chord.Chord(notas)
@@ -136,13 +136,26 @@ def sample(preds, temperature=1.0):
 # Return unique chords of the dataset
 def getUniqueChords(data):
     chords = []
-    chordNames = []
+    info = []
     for chord in data:
-        if not (chord.fullName in chordNames):
-            chords.append(chord)
-            chordNames.append(chord.fullName)
+        if chord.isChord:
+            newinfo = str(chord.fullName)+'_'+str(chord.getContextByClass('KeySignature'))+'_'+str(chord.getContextByClass('TimeSignature'))
+            if not (newinfo in info):
+                info.append(newinfo)
+                chords.append(chord)
+    return chords, info
 
-    return chords
+# Return unique notes of the dataset
+def getUniqueNotes(data):
+    notas = []
+    info = []
+    for nota in data:
+        if nota.isNote:
+            newinfo = str(nota.nameWithOctave)+'_'+str(nota.getContextByClass('KeySignature'))+'_'+str(nota.getContextByClass('TimeSignature'))
+            if not (newinfo in info):
+                info.append(newinfo)
+                notas.append(nota)
+    return notas, info
 
 ###################
 #    READ DATA    #
@@ -152,14 +165,12 @@ data = []
 merged_dict = OrderedDict()
 for i in range (len(file_names)):
     measures,chords = parseMidi(file_names[i])
-
-    #song = generateMIDI(chords,measures)
-    #playSong(song)
     values = []
     for i in range(len(chords)):
         values.append(chords[i][0])
-        #if len(chords[i]) > 1:#   -> If notes also added, more than 1 thing at the same time!!
-            #values.insertIntoNoteOrChord(chords[i][1].offset,chords[i][1], chordsOnly=True)
+        if len(chords[i]) > 1:#   -> If notes also added, more than 1 thing at the same time!!
+            for j in range(1,len(chords[i])):
+                values.append(chords[i][j])
     data += values
     len(data)
 
@@ -168,9 +179,17 @@ for i in range (len(file_names)):
 ########################################
 
 print('total chords:', len(data))
-vals = getUniqueChords(data)
-val_indices = dict((v.fullName, i) for i, v in enumerate(vals))
+chordVals, infoChords = getUniqueChords(data)
+noteVals, infoNotes = getUniqueNotes(data)
+vals = chordVals + noteVals
+info = infoChords + infoNotes
+
+pdb.set_trace()
+
+val_indices = dict((inf, i) for i, inf in enumerate(info))
 indices_val = dict((i, v) for i, v in enumerate(vals))
+
+pdb.set_trace()
 
 ######################
 #    VECTORIZATION   #
@@ -225,7 +244,7 @@ class LossHistory(Callback):
     def on_epoch_end(self, batch, logs={}):
         self.losses.append(logs.get('loss'))
 
-num_epochs = 15
+num_epochs = 1
 history = LossHistory()
 history.losses = []
 for epoch in range(1, num_epochs+1):
@@ -267,6 +286,7 @@ for epoch in range(1, num_epochs+1):
             sys.stdout.flush()
 
         if (epoch % 5) == 0 or epoch == 1 or epoch == num_epochs:
+            pdb.set_trace()
             generated = generateMIDI(generated, list())
             name = 'song_epoch' + str(epoch) + '_diversity' + str(diversity) + '.mid'
             fp = generated.write('midi', fp=name)
@@ -279,6 +299,7 @@ plt.ylabel('Loss')
 plt.title('Loss function - 2 layers LSTM 128 net')
 # plt.show()
 plt.savefig('song_epochs_' + str(num_epochs) +'.png')
+
 ########################
 #    PLAY GENERATED    #
 ########################
