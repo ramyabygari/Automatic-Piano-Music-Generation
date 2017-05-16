@@ -304,6 +304,12 @@ for epoch in range(1, num_epochs+1):
             generated = generateMIDI(generated)
             name = 'song_epoch' + str(epoch) + '_diversity' + str(diversity) + '.mid'
             fp = generated.write('midi', fp=name)
+            plt.plot(history.losses)
+            plt.xlabel('Epochs')
+            plt.ylabel('Loss')
+            plt.title('Loss function - 2 layers LSTM 128 net')
+            # plt.show()
+            plt.savefig('song_epochs_' + str(epoch) +'.png')
 
         print()
 
