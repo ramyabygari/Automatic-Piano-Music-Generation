@@ -33,7 +33,7 @@ else:
 #    FILE LIST    #
 ###################
 
-numFiles = 3
+numFiles = 5
 file_names = os.listdir(path)#List of file names in the directory
 file_names = sorted(file_names, key=lambda item: (int(item.partition('.')[0]) if item[0].isdigit() else float('inf'), item))
 file_names = file_names[0:numFiles]
@@ -112,17 +112,29 @@ def parseMidi(filename):
     return measures,chords
 
 #Creates a MIDI stream from chords/measures -> at the moment only chords used for reconstruction
-def generateMIDI(chords,measures):
+def generateMIDI(chords):
     lensong = len(chords)
+    part = stream.Part()
     song = stream.Voice()
     for i in range(lensong):
         notas = []
-        for j in chordVals[i]:
+        for j in chords[i][0]:
             a = j.nameWithOctave
             notas.append(note.Note(a))
         nextchord = chord.Chord(notas)
         song.insert(i,nextchord)
-    return song
+
+    part.insert(0, song)
+
+    for i in range(lensong):
+        #print(chords[i][2].ratioString)
+        #print(chords[i][1].name)
+        part.insert(i, meter.TimeSignature(chords[i][2].ratioString))
+        part.insert(i, key.KeySignature(chords[i][1].sharps))
+
+
+
+    return part
 
 # helper function to sample an index from a probability array -> allows to have variability
 def sample(preds, temperature=1.0):
@@ -186,7 +198,6 @@ vals, info = getUniqueChords(data)
 
 val_indices = dict((inf, i) for i, inf in enumerate(info))
 indices_val = dict((i, v) for i, v in enumerate(vals))
-pdb.set_trace()
 
 ######################
 #    VECTORIZATION   #
@@ -240,7 +251,7 @@ class LossHistory(Callback):
     def on_epoch_end(self, batch, logs={}):
         self.losses.append(logs.get('loss'))
 
-num_epochs = 1
+num_epochs = 10
 history = LossHistory()
 history.losses = []
 for epoch in range(1, num_epochs+1):
@@ -268,14 +279,13 @@ for epoch in range(1, num_epochs+1):
         for i in range(40):# 40 predicted chords
             x = np.zeros((1, maxlen, len(vals)))
             for t, acorde in enumerate(seed):
-                pdb.set_trace()
                 x[0, t, val_indices[generateKey(acorde)]] = 1.# One-hot representation of the randomly selected sentence
 
             preds = model.predict(x, verbose=0)[0]# Output is a prob vector of 59 positions
             next_index = sample(preds, diversity)# Sample an index from the probability array
             next_chord = indices_val[next_index]# Identifies the character
 
-            generated += next_chord
+            generated.append(next_chord)
             seed.append(next_chord)
             del seed[0]
 
@@ -283,7 +293,7 @@ for epoch in range(1, num_epochs+1):
             sys.stdout.flush()
 
         if (epoch % 5) == 0 or epoch == 1 or epoch == num_epochs:
-            generated = generateMIDI(generated, list())
+            generated = generateMIDI(generated)
             name = 'song_epoch' + str(epoch) + '_diversity' + str(diversity) + '.mid'
             fp = generated.write('midi', fp=name)
 
