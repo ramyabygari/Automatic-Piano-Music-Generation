@@ -33,7 +33,7 @@ else:
 #    FILE LIST    #
 ###################
 
-numFiles = 3
+numFiles = 1
 file_names = os.listdir(path)#List of file names in the directory
 file_names = sorted(file_names, key=lambda item: (int(item.partition('.')[0]) if item[0].isdigit() else float('inf'), item))
 file_names = file_names[0:numFiles]
@@ -139,7 +139,7 @@ def getUniqueChords(data):
     info = []
     for chord in data:
         if chord.isChord:
-            newinfo = str(chord.fullName)+'_'+str(chord.getContextByClass('KeySignature'))+'_'+str(chord.getContextByClass('TimeSignature'))
+            newinfo = generateKey(chord)
             if not (newinfo in info):
                 info.append(newinfo)
                 chords.append(chord)
@@ -151,11 +151,17 @@ def getUniqueNotes(data):
     info = []
     for nota in data:
         if nota.isNote:
-            newinfo = str(nota.nameWithOctave)+'_'+str(nota.getContextByClass('KeySignature'))+'_'+str(nota.getContextByClass('TimeSignature'))
+            newinfo = generateKey(nota)
             if not (newinfo in info):
                 info.append(newinfo)
                 notas.append(nota)
     return notas, info
+
+def generateKey(object):
+    if object.isNote:
+        return str(object.nameWithOctave)+'_'+str(object.getContextByClass('KeySignature'))+'_'+str(object.getContextByClass('TimeSignature'))
+    elif object.isChord:
+        return str(object.fullName)+'_'+str(object.getContextByClass('KeySignature'))+'_'+str(object.getContextByClass('TimeSignature'))
 
 ###################
 #    READ DATA    #
@@ -185,10 +191,8 @@ vals = chordVals + noteVals
 info = infoChords + infoNotes
 
 pdb.set_trace()
-
 val_indices = dict((inf, i) for i, inf in enumerate(info))
 indices_val = dict((i, v) for i, v in enumerate(vals))
-
 pdb.set_trace()
 
 ######################
@@ -212,8 +216,8 @@ y = np.zeros((len(pieces), len(vals)), dtype=np.bool)
 
 for i, piece in enumerate(pieces):
     for t, acorde in enumerate(piece):
-        X[i, t, val_indices[acorde.fullName]] = 1
-    y[i, val_indices[next_chords[i].fullName]] = 1
+        X[i, t, val_indices[generateKey(acorde)]] = 1
+    y[i, val_indices[generateKey(next_chords[i])]] = 1
 
 ######################################
 #    BUILD THE MODEL: 2 LAYER-LSTM   #
