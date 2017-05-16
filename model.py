@@ -84,7 +84,7 @@ def parseMidi(filename):
             melody.insert(j.offset, j)
 
     melody.removeByClass(note.Rest)
-    melody.removeByClass(note.Note)
+    #melody.removeByClass(note.Note)
     #melody.removeByClass(chord.Chord)
 
     measures = []
@@ -118,21 +118,22 @@ def generateMIDI(chords):
     song = stream.Voice()
     for i in range(lensong):
         notas = []
-        for j in chords[i][0]:
-            a = j.nameWithOctave
-            notas.append(note.Note(a))
-        nextchord = chord.Chord(notas)
-        song.insert(i,nextchord)
+        if (len(chords[i][0]) != 0):
+            for j in chords[i][0][0]:
+                a = j.nameWithOctave
+                notas.append(note.Note(a))
+            nextchord = chord.Chord(notas)
+            song.insert(i,nextchord)
+        for n in chords[i][1]:
+            song.insert(i, note.Note(n.nameWithOctave))
 
     part.insert(0, song)
 
     for i in range(lensong):
         #print(chords[i][2].ratioString)
         #print(chords[i][1].name)
-        part.insert(i, meter.TimeSignature(chords[i][2].ratioString))
-        part.insert(i, key.KeySignature(chords[i][1].sharps))
-
-
+        part.insert(i, key.KeySignature(chords[i][2].sharps))
+        part.insert(i, meter.TimeSignature(chords[i][3].ratioString))
 
     return part
 
@@ -158,7 +159,13 @@ def getUniqueChords(data):
 
 
 def generateKey(object):
-    return object[0].fullName + object[1].name + object[2].ratioString
+    notesName = ""
+    chordsName = ""
+    for n in object[0]:
+        chordsName += n.fullName
+    for n in object[1]:
+        notesName += n.nameWithOctave
+    return chordsName + notesName + object[2].name + object[3].ratioString
 
 ###################
 #    READ DATA    #
@@ -166,19 +173,23 @@ def generateKey(object):
 
 data = []
 
-merged_dict = OrderedDict()
 for i in range (len(file_names)):
     measures,chords = parseMidi(file_names[i])
     values = []
-    for i in range(len(chords)):
+    for j in range(len(chords)):
         timestep = []
-        timestep.append(chords[i][0])
-        timestep.append(measures[i][2])
-        timestep.append(measures[i][3])
+        chordList = []
+        noteList = []
+        for t in chords[j]:
+            if t.isChord:
+                chordList.append(t)
+            elif t.isNote:
+                noteList.append(t)
+        timestep.append(chordList)
+        timestep.append(noteList)
+        timestep.append(measures[j][2])
+        timestep.append(measures[j][3])
         values.append(timestep)
-        #if len(chords[i]) > 1:#   -> If notes also added, more than 1 thing at the same time!!
-        #    for j in range(1,len(chords[i])):
-        #       values.append(chords[i][j])
     data += values
     len(data)
 
@@ -186,15 +197,12 @@ for i in range (len(file_names)):
 #data[0][1].name
 #data[0][2].ratioString
 
-
-
 ########################################
 #    ORGANIZE CHORDS IN THE DATASET    #
 ########################################
 
 print('total chords:', len(data))
 vals, info = getUniqueChords(data)
-
 
 val_indices = dict((inf, i) for i, inf in enumerate(info))
 indices_val = dict((i, v) for i, v in enumerate(vals))
