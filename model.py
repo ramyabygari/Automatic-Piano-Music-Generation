@@ -33,7 +33,7 @@ else:
 #    FILE LIST    #
 ###################
 
-numFiles = 1
+numFiles = 3
 file_names = os.listdir(path)#List of file names in the directory
 file_names = sorted(file_names, key=lambda item: (int(item.partition('.')[0]) if item[0].isdigit() else float('inf'), item))
 file_names = file_names[0:numFiles]
@@ -84,10 +84,10 @@ def parseMidi(filename):
             melody.insert(j.offset, j)
 
     melody.removeByClass(note.Rest)
-    #melody.removeByClass(note.Note)
+    melody.removeByClass(note.Note)
     #melody.removeByClass(chord.Chord)
 
-    measures = OrderedDict()
+    measures = []
     measureNum = 0
     for part in melody:
         curr_part = stream.Voice()
@@ -95,10 +95,10 @@ def parseMidi(filename):
         curr_part.insert(part.offset,part.getContextByClass('MetronomeMark'))
         curr_part.insert(part.offset,part.getContextByClass('KeySignature'))
         curr_part.insert(part.offset,part.getContextByClass('TimeSignature'))
-        measures[measureNum] = curr_part
+        measures.append(curr_part)
         measureNum += 1
 
-    chords = OrderedDict()
+    chords = []
     chordNum = 0
     for part in melody:
         curr_part = stream.Voice()
@@ -106,7 +106,7 @@ def parseMidi(filename):
             curr_part.insert(part.offset, part.getContextByClass('Chord'))
         if part.getContextByClass('Note') != None:
             curr_part.insert(part.offset,part.getContextByClass('Note'))
-        chords[chordNum] = curr_part
+        chords.append(curr_part)
         chordNum += 1
 
     return measures,chords
@@ -168,17 +168,28 @@ def generateKey(object):
 ###################
 
 data = []
+
 merged_dict = OrderedDict()
 for i in range (len(file_names)):
     measures,chords = parseMidi(file_names[i])
     values = []
     for i in range(len(chords)):
-        values.append(chords[i][0])
-        if len(chords[i]) > 1:#   -> If notes also added, more than 1 thing at the same time!!
-            for j in range(1,len(chords[i])):
-                values.append(chords[i][j])
+        timestep = []
+        timestep.append(chords[i][0])
+        timestep.append(measures[i][2])
+        timestep.append(measures[i][3])
+        values.append(timestep)
+        #if len(chords[i]) > 1:#   -> If notes also added, more than 1 thing at the same time!!
+        #    for j in range(1,len(chords[i])):
+        #       values.append(chords[i][j])
     data += values
     len(data)
+
+#data[0][0].fullName
+#data[0][1].name
+#data[0][2].ratioString
+
+pdb.set_trace()
 
 ########################################
 #    ORGANIZE CHORDS IN THE DATASET    #
@@ -190,10 +201,8 @@ noteVals, infoNotes = getUniqueNotes(data)
 vals = chordVals + noteVals
 info = infoChords + infoNotes
 
-pdb.set_trace()
 val_indices = dict((inf, i) for i, inf in enumerate(info))
 indices_val = dict((i, v) for i, v in enumerate(vals))
-pdb.set_trace()
 
 ######################
 #    VECTORIZATION   #
@@ -240,7 +249,6 @@ model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 #################
 
 
-
 class LossHistory(Callback):
     def on_train_begin(self, logs={}):
         pass
@@ -254,13 +262,13 @@ history.losses = []
 for epoch in range(1, num_epochs+1):
     print()
     print('-' * 50)
-    print('epoxh', epoch)
+    print('epoch', epoch)
     model.fit(X, y,
               batch_size=128,
               epochs=1,
               callbacks=[history])
 
-    start_index = random.randint(0, len(data) - maxlen - 1)#valor random entre 0 y 200287-40-1
+    start_index = random.randint(0, len(data) - maxlen - 1)
 
     for diversity in [0.2, 0.5, 1.0, 1.2]:#0.2, 0.5, 1.0, 1.2
         print()
@@ -276,7 +284,8 @@ for epoch in range(1, num_epochs+1):
         for i in range(40):# 40 predicted chords
             x = np.zeros((1, maxlen, len(vals)))
             for t, acorde in enumerate(seed):
-                x[0, t, val_indices[acorde.fullName]] = 1.# One-hot representation of the randomly selected sentence
+                pdb.set_trace()
+                x[0, t, val_indices[generateKey(acorde)]] = 1.# One-hot representation of the randomly selected sentence
 
             preds = model.predict(x, verbose=0)[0]# Output is a prob vector of 59 positions
             next_index = sample(preds, diversity)# Sample an index from the probability array
@@ -290,7 +299,6 @@ for epoch in range(1, num_epochs+1):
             sys.stdout.flush()
 
         if (epoch % 5) == 0 or epoch == 1 or epoch == num_epochs:
-            pdb.set_trace()
             generated = generateMIDI(generated, list())
             name = 'song_epoch' + str(epoch) + '_diversity' + str(diversity) + '.mid'
             fp = generated.write('midi', fp=name)
