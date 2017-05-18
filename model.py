@@ -9,7 +9,7 @@ from keras.optimizers import RMSprop
 from keras.utils.data_utils import get_file
 from keras.callbacks import Callback
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import random
 import sys
 import os
@@ -207,6 +207,8 @@ vals, info = getUniqueChords(data)
 val_indices = dict((inf, i) for i, inf in enumerate(info))
 indices_val = dict((i, v) for i, v in enumerate(vals))
 
+print('dicctionary length:', len(val_indices))
+
 ######################
 #    VECTORIZATION   #
 ######################
@@ -304,21 +306,23 @@ for epoch in range(1, num_epochs+1):
             generated = generateMIDI(generated)
             name = 'song_epoch' + str(epoch) + '_diversity' + str(diversity) + '.mid'
             fp = generated.write('midi', fp=name)
-            plt.plot(history.losses)
-            plt.xlabel('Epochs')
-            plt.ylabel('Loss')
-            plt.title('Loss function - 2 layers LSTM 128 net')
-            # plt.show()
-            plt.savefig('song_epochs_' + str(epoch) +'.png')
+            # plt.plot(history.losses)
+            # plt.xlabel('Epochs')
+            # plt.ylabel('Loss')
+            # plt.title('Loss function - 2 layers LSTM 128 net')
+            # # plt.show()
+            # plt.savefig('song_epochs_' + str(epoch) +'.png')
+            np.save('song_loss_epochs_' + str(epoch) +'.npy')
 
         print()
 
-plt.plot(history.losses)
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
-plt.title('Loss function - 2 layers LSTM 128 net')
-# plt.show()
-plt.savefig('song_epochs_' + str(num_epochs) +'.png')
+# plt.plot(history.losses)
+# plt.xlabel('Epochs')
+# plt.ylabel('Loss')
+# plt.title('Loss function - 2 layers LSTM 128 net')
+# # plt.show()
+# plt.savefig('song_epochs_' + str(num_epochs) +'.png')
+np.save('song_loss_epochs_' + str(num_epochs) +'.npy')
 
 ########################
 #    PLAY GENERATED    #
