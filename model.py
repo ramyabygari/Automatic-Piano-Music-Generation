@@ -312,7 +312,7 @@ for epoch in range(1, num_epochs+1):
             # plt.title('Loss function - 2 layers LSTM 128 net')
             # # plt.show()
             # plt.savefig('song_epochs_' + str(epoch) +'.png')
-            np.save('song_loss_epochs_' + str(epoch) +'.npy')
+            np.save('song_loss_epochs_' + str(epoch) +'.npy', np.array(history.losses))
 
         print()
 
@@ -322,7 +322,7 @@ for epoch in range(1, num_epochs+1):
 # plt.title('Loss function - 2 layers LSTM 128 net')
 # # plt.show()
 # plt.savefig('song_epochs_' + str(num_epochs) +'.png')
-np.save('song_loss_epochs_' + str(num_epochs) +'.npy')
+np.save('song_loss_epochs_' + str(num_epochs) +'.npy', np.array(history.losses))
 
 ########################
 #    PLAY GENERATED    #
