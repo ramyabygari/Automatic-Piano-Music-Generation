@@ -1,5 +1,3 @@
-#/Users/albertbou/Automatic-Piano-Music-Generation/Data
-
 from __future__ import print_function
 from keras.models import Sequential
 from keras.layers import Dense, Activation
@@ -9,7 +7,7 @@ from keras.optimizers import RMSprop
 from keras.utils.data_utils import get_file
 from keras.callbacks import Callback
 import numpy as np
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import random
 import sys
 import os
@@ -33,7 +31,7 @@ else:
 #    FILE LIST    #
 ###################
 
-numFiles = 5
+numFiles = 6
 file_names = os.listdir(path)#List of file names in the directory
 file_names = sorted(file_names, key=lambda item: (int(item.partition('.')[0]) if item[0].isdigit() else float('inf'), item))
 file_names = file_names[0:numFiles]
@@ -65,7 +63,7 @@ def extractOneVoice(MIDIdata,i):
 
 #Obtain measures and chords from a MIDI file
 def parseMidi(filename):
-
+    print("processing", filename)
     MIDIdata = converter.parse(
         path + "/" + filename)  # Parse the MIDI data for separate melody and accompaniment parts.
     # a Score class is obtained. Socre class is a Stream subclass for handling multi-part music.
@@ -316,11 +314,11 @@ for epoch in range(1, num_epochs+1):
 
         print()
 
-# plt.plot(history.losses)
-# plt.xlabel('Epochs')
-# plt.ylabel('Loss')
-# plt.title('Loss function - 2 layers LSTM 128 net')
-# # plt.show()
+plt.plot(history.losses)
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.title('Loss function - 2 layers LSTM 128 net')
+plt.show()
 # plt.savefig('song_epochs_' + str(num_epochs) +'.png')
 np.save('song_loss_epochs_' + str(num_epochs) +'.npy', np.array(history.losses))
 
