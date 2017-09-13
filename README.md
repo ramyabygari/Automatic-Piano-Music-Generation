@@ -4,7 +4,7 @@ In this project we generate piano music by using a Recurrent Neural Network arch
 
 For more information check the [report](AutomaticPianoReport.pdf) and for a short overview check the [poster](AutomaticPianoPoster.pdf).
 
-The results can be found in the Results/ folder. Note that this project require further work to achive a similarity to a real piano piece.
+The results can be found in the Results/ folder. Note that this project require further work to achive similarity to a real piano piece.
 
 ## Instrucctions
 
